@@ -1,0 +1,8 @@
+*.csv
+*.log
+src/algorithms/__pycache__
+src/datasets/__pycache__
+results/
+outputs/
+*pyc*
+pipeline_output/*
