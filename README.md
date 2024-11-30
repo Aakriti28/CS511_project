@@ -8,6 +8,12 @@ The aim of this tool is to compare several frameworks who manage DataFrames on c
 
 \***Note**: you will need Docker installed on your machine. If you want to run the algorithms locally, avoid this step.
 
+## Run commands
+```
+python run_algorithm.py --algorithm pandas --dataset athlete --locally
+python run_algorithm.py --algorithm modin_dask --dataset athlete --locally
+```
+
 ## Run an Algorithm
 
 The command `python run_algorithm.py --algorithm <algorithm_name> --dataset <dataset_name>` will run an algorithm on the specified dataset. By default, an algorithm runs inside its Docker container. If you want to run it locally, add the parameter `--locally`.

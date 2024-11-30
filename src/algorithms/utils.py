@@ -196,24 +196,25 @@ def execute_methods(methods: dict, ds: Dataset, algo: AbstractAlgorithm, step=Fa
                 if "restore" in test:
                     algo.restore()
         except Exception as e:
-            print(
-                colors.color(
-                    "Cannot execute the method: " + test["method"] + "because" + str(e),
-                    fg="red",
-                )
-            )
-            err.write(
-                time.strftime("%Y-%m-%d %H:%M:%S")
-                + " - ERROR - dataset: "
-                + ds.name
-                + ", algorithm: "
-                + algo.name
-                + ", method: "
-                + test["method"]
-                + " - "
-                + str(e)
-                + "\n"
-            )
-            err.close()
-            exit(1)
+            raise RuntimeError("Hitting commented exception code")
+            # print(
+            #     colors.color(
+            #         "Cannot execute the method: " + test["method"] + "because" + str(e),
+            #         fg="red",
+            #     )
+            # )
+            # err.write(
+            #     time.strftime("%Y-%m-%d %H:%M:%S")
+            #     + " - ERROR - dataset: "
+            #     + ds.name
+            #     + ", algorithm: "
+            #     + algo.name
+            #     + ", method: "
+            #     + test["method"]
+            #     + " - "
+            #     + str(e)
+            #     + "\n"
+            # )
+            # err.close()
+            # exit(1)
     err.close()

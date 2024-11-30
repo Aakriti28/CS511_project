@@ -550,7 +550,7 @@ class PandasBench(AbstractAlgorithm):
         """
         if not columns:
             columns = self.df_.columns
-        if not apply:
+        if apply:
             if type(f) == str:
                 f = eval(f)
             self.df_[col_name] = self.df_[columns].apply(f, axis=1)
