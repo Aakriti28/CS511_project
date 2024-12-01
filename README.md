@@ -8,11 +8,38 @@ The aim of this tool is to compare several frameworks who manage DataFrames on c
 
 \***Note**: you will need Docker installed on your machine. If you want to run the algorithms locally, avoid this step.
 
+4. Install Java 
+```
+sudo apt install openjdk-11-jre-headless
+```
+Change your env activate file path in `set_java_home.sh` and run it.
+
+5. Install hadoop
+```
+wget https://downloads.apache.org/hadoop/common/hadoop-3.4.1/hadoop-3.4.1.tar.gz
+tar -xzvf hadoop-3.4.1.tar.gz
+sudo mv hadoop-3.4.1 /usr/local/hadoop
+```
+
+Add the following lines to your `.bashrc` and env activate file:
+```
+export HADOOP_HOME=/usr/local/hadoop
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
+```
+
 ## Run commands
 ```
 python run_algorithm.py --algorithm pandas --dataset athlete --locally
 python run_algorithm.py --algorithm modin_dask --dataset athlete --locally
 python run_algorithm.py --algorithm polars --dataset athlete --locally
+python run_algorithm.py --algorithm pyspark_pandas --dataset athlete --locally
 ```
 
 ## Run an Algorithm
