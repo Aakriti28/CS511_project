@@ -600,7 +600,7 @@ class PolarsBench(AbstractAlgorithm):
                  e.g. to sum two columns
                  pl.map(["col1", "col2"], lambda x: x[0] + x[1])
         """
-        if apply:
+        if not apply:
             self.df_ = eval(f)
             return self.df_
         else:

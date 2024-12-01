@@ -78,7 +78,7 @@ class SparkBench(AbstractAlgorithm):
             SparkSession.builder.appName(app_name).config(conf=self.c).getOrCreate()
         )
 
-  def force_execution(self):
+    def force_execution(self):
         """
         Forces the execution of lazy methods
         """

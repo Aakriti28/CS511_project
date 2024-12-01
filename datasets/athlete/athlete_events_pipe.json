@@ -1282,7 +1282,7 @@
                     "Name",
                     "Sport"
                 ],
-                "f": "pl.sum(pl.col('Medal_Won'))"
+                "f": "pl.sum('Medal_Won')"
             }
         },
         {
@@ -1311,7 +1311,7 @@
                     "Name",
                     "Sport"
                 ],
-                "f": "pl.count(pl.col('NOC'))"
+                "f": "pl.count('NOC')"
             }
         },
         {
