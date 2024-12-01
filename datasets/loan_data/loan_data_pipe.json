@@ -1,0 +1,716 @@
+{
+    "Input": [
+        {
+            "method": "load_dataset",
+            "input": {
+                "sep": ","
+            },
+            "input_dask": {
+                "sep": ",",
+                "assume_missing": "True",
+                "dtype": "object"
+            },
+            "input_koalas": {
+                "sep": ",",
+                "assume_missing": "True"
+            },
+            "input_vaex1": {
+                "sep": ",",
+                "low_memory": "False"
+            },
+            "input_vaex": {
+                "lazy": true
+            }
+        },
+        {
+            "method": "force_execution",
+            "input": {}
+        }
+    ],
+    "EDA": [
+        {
+            "method": "get_columns",
+            "input": {}
+        },
+        {
+            "method": "locate_null_values",
+            "input": {
+                "column": "all"
+            }
+        },
+        {
+            "method": "sort",
+            "input": {
+                "columns": [
+                    "loan_amnt"
+                ]
+            },
+            "input_dask": {
+                "columns": [
+                    "loan_amnt"
+                ],
+                "cast": {
+                    "Year": "int64"
+                }
+            }
+        },
+        {
+            "method": "query",
+            "input": {
+                "query": "loan_amnt >= 15000 & purpose == 'credit_card'"
+            },
+            "input_rapids": {
+                "query": "(loan_amnt >= 15000 and purpose == 'credit_card')"
+            },
+            "input_datatable": {
+                "query": "((dt.f.loan_amnt >= 15000) & (dt.f.purpose == 'credit_card'))"
+            },
+            "input_polars": {
+                "query": "(pl.col('loan_amnt') >= 15000) & (pl.col('purpose') == 'credit_card')",
+                "req_compile": [
+                    "query"
+                ],
+                "extra_commands": [
+                    "import polars as pl"
+                ]
+            },
+            "input_spark": {
+                "query": "(fn.col('loan_amnt') >= 15000) & (fn.col('purpose') == 'credit_card')",
+                "req_compile": [
+                    "query"
+                ],
+                "extra_commands": [
+                    "import pyspark.sql.functions as fn"
+                ]
+            },
+            "input_pyspark_pandas": {
+                "query": "('loan_amnt' >= 15000) and ('purpose' == 'credit_card')"
+            },
+            "input_vaex": {
+                "query": "loan_amnt >= 15000 and purpose == 'credit_card'"
+            }
+        },
+        {
+            "method": "force_execution",
+            "input": {}
+        }
+    ],
+    "data_transformation": [
+        {
+            "method": "join",
+            "input": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')"
+                ]
+            },
+            "input_datatable": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "import datatable as dt",
+                    "average_income=dt.Frame(average_income)"
+                ]
+            },
+            "input_pyspark_pandas": {
+                "other": "average_income",
+                "left_on": [
+                    "addr_state"
+                ],
+                "right_on": [
+                    "addr_state"
+                ],
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pyspark.pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')"
+                ]
+            },
+            "input_dask": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "import dask.dataframe as dd",
+                    "average_income=dd.from_pandas(average_income, npartitions=1)"
+                ]
+            },
+            "input_modin_dask": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "import modin.pandas as mpd",
+                    "average_income=mpd.DataFrame(average_income)"
+                ]
+            },
+            "input_modin_ray": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "import modin.pandas as mpd",
+                    "average_income=mpd.DataFrame(average_income)"
+                ]
+            },
+            "input_vaex": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "import vaex",
+                    "average_income=vaex.from_pandas(average_income)"
+                ]
+            },
+            "input_rapids": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "import cudf",
+                    "average_income=cudf.from_pandas(pd.read_csv('datasets/loan_data/average_income_by_state.csv'))"
+                ]
+            },
+            "input_polars": {
+                "other": "average_income",
+                "left_on": "addr_state",
+                "right_on": "addr_state",
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "import polars as pl",
+                    "average_income=pl.from_pandas(average_income).lazy()"
+                ]
+            },
+            "input_spark": {
+                "other": "average_income",
+                "left_on": [
+                    "addr_state"
+                ],
+                "right_on": [
+                    "addr_state"
+                ],
+                "how": "left",
+                "req_compile": [
+                    "other"
+                ],
+                "extra_commands": [
+                    "from pyspark.sql import DataFrame, SparkSession",
+                    "sparkSession=SparkSession.builder.getOrCreate()",
+                    "import pandas as pd",
+                    "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
+                    "from pyspark.sql.types import *",
+                    "schema = StructType([StructField('NOC', StringType(), True), StructField('region', StringType(), True), StructField('notes', StringType(), True)])",
+                    "average_income=sparkSession.createDataFrame(average_income, schema=schema)",
+                    "average_income.persist()"
+                ]
+            }
+        },
+        {
+            "method": "delete_columns",
+            "input": {
+                "columns": [
+                    "url"
+                ]
+            }
+        },
+        {
+            "method": "rename_columns",
+            "input": {
+                "columns": {
+                    "emp_title": "title"
+                }
+            }
+        },
+        {
+            "method": "delete_columns",
+            "input": {
+                "columns": [
+                    "pymnt_plan"
+                ]
+            }
+        },
+        {
+            "method": "calc_column",
+            "input": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x[1] == 'Illinois' else x[0]",
+                "apply": true
+            },
+            "input_vaex": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'ILL' if y == 'Illinois' else x"
+            },
+            "input_spark": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'ILL' if y == 'Illinois' else x",
+                "apply": true
+            },
+            "input_polars": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
+                "return_dtype": "pl.Utf8",
+                "apply": true
+            },
+            "input_rapids": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
+                "apply": true
+            },
+            "input_pyspark_pandas": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
+                "apply": true
+            }
+        },
+        {
+            "method": "calc_column",
+            "input": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x[1] == 'Illinois' else x[0]",
+                "apply": true
+            },
+            "input_vaex": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'ILL' if y == 'Illinois' else x"
+            },
+            "input_spark": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'ILL' if y == 'Illinois' else x",
+                "apply": true
+            },
+            "input_polars": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
+                "return_dtype": "pl.Utf8",
+                "apply": true
+            },
+            "input_pyspark_pandas": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
+                "apply": true
+            }
+        },
+        {
+            "method": "calc_column",
+            "input": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'NWH' if x[1] == 'New Hampshire' else x[0]",
+                "apply": true
+            },
+            "input_vaex": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'NWH' if y == 'New Hampshire' else x"
+            },
+            "input_spark": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'NWH' if y == 'New Hampshire' else x",
+                "apply": true
+            },
+            "input_polars": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'NWH' if x['state_full'] == 'New Hampshire' else x['addr_state']",
+                "return_dtype": "pl.Utf8",
+                "apply": true
+            },
+            "input_pyspark_pandas": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'NWH' if x['state_full'] == 'New Hampshire' else x['addr_state']",
+                "apply": true
+            }
+        },
+        {
+            "method": "calc_column",
+            "input": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'INI' if x[1] == 'INDIANA' else x[0]",
+                "apply": true
+            },
+            "input_vaex": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'INI' if y == 'Indiana' else x"
+            },
+            "input_spark": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x, y: 'INI' if y == 'Indiana' else x",
+                "apply": true
+            },
+            "input_polars": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'INI' if x['state_full'] == 'Indiana' else x['addr_state']",
+                "return_dtype": "pl.Utf8",
+                "apply": true
+            },
+            "input_pyspark_pandas": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 'INI' if x['state_full'] == 'Indiana' else x['addr_state']",
+                "apply": true
+            }
+        },
+        {
+            "method": "rename_columns",
+            "input": {
+                "columns": {
+                    "addr_state": "state"
+                }
+            }
+        },
+        {
+            "method": "cast_columns_types",
+            "input": {
+                "dtypes": {
+                    "state": "str"
+                }
+            },
+            "input_polars": {
+                "dtypes": {
+                    "state": "polars.Utf8"
+                },
+                "req_compile": [
+                    "dtypes"
+                ],
+                "extra_commands": [
+                    "import polars"
+                ]
+            },
+            "input_spark": {
+                "dtypes": {
+                    "state": "T.StringType()"
+                },
+                "req_compile": [
+                    "dtypes"
+                ],
+                "extra_commands": [
+                    "import pyspark.sql.types as T"
+                ]
+            },
+            "input_vaex": {
+                "dtypes": {
+                    "state": "string"
+                }
+            }
+        },
+        {
+            "method": "delete_columns",
+            "input": {
+                "columns": [
+                    "desc"
+                ]
+            },
+            "input_polars": {
+                "pass": ""
+            }
+        },
+        {
+            "method": "calc_column",
+            "input": {
+                "col_name": "loan_paid",
+                "columns": [
+                    "loan_status"
+                ],
+                "f": "lambda x: 1 if x[0] == 'Fully Paid' else 0",
+                "apply": true
+            },
+            "input_rapids":{
+                "col_name": "load_paid",
+                "columns": [
+                    "loan_status"
+                ],
+                "f": "lambda x: 0 if x['loan_status'] == 'Fully Paid' else 1",
+                "apply": true
+            },
+            "input_vaex": {
+                "col_name": "loan_paid",
+                "columns": [
+                    "loan_status"
+                ],
+                "f": "lambda x: 0 if x == 'Fully Paid' else 1"
+            },
+            "input_polars": {
+                "col_name": "loan_paid",
+                "columns": [
+                    "loan_status"
+                ],
+                "f": "lambda x: 0 if x == 'Fully Paid' else 1",
+                "return_dtype": "pl.Int64",
+                "apply": true
+            },
+            "input_spark": {
+                "col_name": "loan_paid",
+                "columns": [
+                    "loan_status"
+                ],
+                "f": "lambda x: 0 if x == 'Fully Paid' else 1",
+                "apply": true
+            },
+            "input_pyspark_pandas": {
+                "col_name": "loan_paid",
+                "columns": [
+                    "loan_status"
+                ],
+                "f": "lambda x: 0 if x['loan_status'] == 'Fully Paid' else 1",
+                "apply": true
+            }
+        },
+        {
+            "method": "groupby",
+            "input": {
+                "columns": [
+                    "state",
+                    "purpose"
+                ],
+                "f": {
+                    "loan_paid": "sum"
+                }
+            },
+            "input_datatable": {
+                "columns": [
+                    "state",
+                    "purpose"
+                ],
+                "f": "dt.sum(dt.f['loan_paid'])"
+            },
+            "input_polars": {
+                "columns": [
+                    "state",
+                    "purpose"
+                ],
+                "f": "pl.sum('loan_paid')"
+            }
+        },
+        {
+            "method": "groupby",
+            "input": {
+                "columns": [
+                    "state",
+                    "purpose"
+                ],
+                "f": {
+                    "mths_since_recent_revol_delinq": "count"
+                }
+            },
+            "input_datatable": {
+                "columns": [
+                    "state",
+                    "purpose"
+                ],
+                "f": "dt.count(dt.f['mths_since_recent_revol_delinq'])"
+            },
+            "input_polars": {
+                "columns": [
+                    "state",
+                    "purpose"
+                ],
+                "f": "pl.count('mths_since_recent_revol_delinq')"
+            }
+        },
+        {
+            "method": "force_execution",
+            "input": {}
+        }
+    ],
+    "data_cleaning": [
+        {
+            "method": "drop_duplicates",
+            "input": {}
+        },
+        {
+            "method": "fill_nan",
+            "input": {
+                "columns": [
+                    "mths_since_last_record"
+                ],
+                "value": 100
+            }
+        },
+        {
+            "method": "replace",
+            "input": {
+                "columns": [
+                    "verification_status"
+                ],
+                "to_replace": "Source Verified",
+                "value": "To Verify",
+                "regex": false
+            },
+            "input_polars": {
+                "columns": [
+                    "verification_status"
+                ],
+                "to_replace": "Source Verified",
+                "value": "To Verify",
+                "regex": false,
+                "return_dtype": "pl.Utf8"
+            }
+        },
+        {
+            "method": "replace",
+            "input": {
+                "columns": [
+                    "verification_status"
+                ],
+                "to_replace": "Not Verified",
+                "value": "Unverified",
+                "regex": false
+            },
+            "input_polars": {
+                "columns": [
+                    "verification_status"
+                ],
+                "to_replace": "Not Verified",
+                "value": "Unverified",
+                "regex": false,
+                "return_dtype": "pl.Utf8"
+            }
+        },
+        {
+            "method": "force_execution",
+            "input": {}
+        }
+    ],
+    "output": [
+        {
+            "method": "to_csv",
+            "input": {
+                "sep": ","
+            },
+            "input_datatable": {},
+            "input_vaex": {},
+            "input_polars": {}
+        }
+    ]
+}
