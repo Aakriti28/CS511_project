@@ -145,7 +145,7 @@ class SparkBench(AbstractAlgorithm):
         return self.df_
 
     def read_csv(self, path, sep=",", **kwargs):
-        self.df_ = self.sparkSession.read.csv(path, **kwargs)
+        self.df_ = self.sparkSession.read.csv(path, header=True, **kwargs)
         return self.df_
 
     def read_xml(self, path, **kwargs):
@@ -723,7 +723,7 @@ class SparkBench(AbstractAlgorithm):
         :param col_name column on which apply the function
         :param f function to apply, must be an expression, eg. A+1
         """
-        if apply:
+        if not apply:
             self.df_ = eval(f)
         elif type(f) == str:
             udf_lambda = fn.udf(eval(f), StringType())
