@@ -268,7 +268,7 @@
             "method": "rename_columns",
             "input": {
                 "columns": {
-                    "emp_title": "title"
+                    "emp_title": "employee_title"
                 }
             }
         },
