@@ -60,7 +60,7 @@
                 "query": "loan_amnt >= 15000 & purpose == 'credit_card'"
             },
             "input_rapids": {
-                "query": "(loan_amnt >= 15000 and purpose == 'credit_card')"
+                "query": "(loan_amnt >= 15000 and funded_amnt <= 20000)"
             },
             "input_datatable": {
                 "query": "((dt.f.loan_amnt >= 15000) & (dt.f.purpose == 'credit_card'))"
@@ -324,7 +324,7 @@
                     "addr_state",
                     "state_full"
                 ],
-                "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
+                "f": "lambda x: 1 if x['state_full'] == 'Illinois' else 0",
                 "apply": true
             },
             "input_pyspark_pandas": {
@@ -383,6 +383,15 @@
                 ],
                 "f": "lambda x: 'ILL' if x['state_full'] == 'Illinois' else x['addr_state']",
                 "apply": true
+            },
+            "input_rapids": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 1 if x['state_full'] == 'Illinois' else 0",
+                "apply": true
             }
         },
         {
@@ -431,6 +440,15 @@
                 ],
                 "f": "lambda x: 'NWH' if x['state_full'] == 'New Hampshire' else x['addr_state']",
                 "apply": true
+            },
+            "input_rapids": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 1 if x['state_full'] == 'New Hampshire' else 0",
+                "apply": true
             }
         },
         {
@@ -478,6 +496,15 @@
                     "state_full"
                 ],
                 "f": "lambda x: 'INI' if x['state_full'] == 'Indiana' else x['addr_state']",
+                "apply": true
+            },
+            "input_rapids": {
+                "col_name": "addr_state",
+                "columns": [
+                    "addr_state",
+                    "state_full"
+                ],
+                "f": "lambda x: 1 if x['state_full'] == 'Indiana' else 0",
                 "apply": true
             }
         },
@@ -594,7 +621,7 @@
                     "purpose"
                 ],
                 "f": {
-                    "loan_paid": "sum"
+                    "loan_amnt": "sum"
                 }
             },
             "input_datatable": {
@@ -602,14 +629,14 @@
                     "state",
                     "purpose"
                 ],
-                "f": "dt.sum(dt.f['loan_paid'])"
+                "f": "dt.sum(dt.f['loan_amnt'])"
             },
             "input_polars": {
                 "columns": [
                     "state",
                     "purpose"
                 ],
-                "f": "pl.sum('loan_paid')"
+                "f": "pl.sum('loan_amnt')"
             }
         },
         {
