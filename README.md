@@ -12,6 +12,7 @@ The aim of this tool is to compare several frameworks who manage DataFrames on c
 ```
 python run_algorithm.py --algorithm pandas --dataset athlete --locally
 python run_algorithm.py --algorithm modin_dask --dataset athlete --locally
+python run_algorithm.py --algorithm polars --dataset athlete --locally
 ```
 
 ## Run an Algorithm
