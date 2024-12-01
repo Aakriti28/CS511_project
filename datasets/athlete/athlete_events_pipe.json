@@ -333,7 +333,7 @@
                     "Country",
                     "NOC"
                 ],
-                "f": "lambda x: 'Singapore' if x['NOC'].to_cupy()[0][0] == 'SGP' else x['Country']",
+                "f": "lambda x: 'Singapore' if x['NOC'] == 'SGP' else x['Country']",
                 "apply": true
             }
         },
@@ -791,7 +791,6 @@
                 "extra_commands": [
                     "import pyspark.pandas as pd",
                     "w_gdp = pd.read_csv('datasets/athlete/world_gdp.csv')",
-                    "w_gdp = w_gdp.drop(['Indicator Name', 'Indicator Code'], axis = 1)",
 
                     "w_gdp['Year'] = pd.to_numeric(w_gdp['Year'])"
                 ]

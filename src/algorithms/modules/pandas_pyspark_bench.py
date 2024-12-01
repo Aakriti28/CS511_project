@@ -62,7 +62,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         pd.set_option('compute.ops_on_diff_frames', True)
 
 
-   def backup(self):
+    def backup(self):
         """
         Creates a backup copy of the current dataframe
         """
@@ -562,7 +562,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         if not columns:
             columns = self.get_columns()
-        if not apply:
+        if apply:
             if type(f) == str:
                 f = eval(f)
                 self.df_[col_name] = self.df_[columns].apply(f, axis=1)  # , args=(,))
