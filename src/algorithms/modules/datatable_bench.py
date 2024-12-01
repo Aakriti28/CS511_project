@@ -551,7 +551,7 @@ class DataTableBench(AbstractAlgorithm):
         if not columns:
             columns = self.df_.names
             
-        if apply:
+        if not apply:
             if isinstance(f, str):
                 self.df_[:, col_name] = eval(f)
             

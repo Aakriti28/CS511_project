@@ -10,6 +10,15 @@ import unicodedata
 import cupy
 import numpy as np
 
+class CustomFunction:
+    def __init__(self, func_string):
+        # Extract the logic from the lambda string
+        self.func_logic = func_string.split('lambda x: ')[1]
+    
+    def __call__(self, x):
+        # Evaluate the logic dynamically
+        return eval(self.func_logic)
+
 class RapidsBench(AbstractAlgorithm):
     df_ = None
     backup_ = None
@@ -554,13 +563,40 @@ class RapidsBench(AbstractAlgorithm):
         Calculate the new column col_name by applying
         the function f to the whole dataframe
         """
+        
+
         if not columns:
             columns = self.df_.columns
-        print(f)
-        if not apply:
+        print(col_name, f, columns, apply)
+        print("aaaaaadaaaa", f, type(f))
+
+        def custom_function(row):
+            if row['NOC'] == 'SGP':
+                return row['Country'].replace('Country', 'Singapore')
+            return row['Country']
+
+        if apply:
             if type(f) == str:
                 f = eval(f)
-            self.df_[col_name] = f(self.df_[columns])
+                print(type(f), type(self.df_), f)
+                self.df_[col_name] = self.df_[columns].apply(f, axis=1)
+                # self.df_[col_name] = self.df_[columns].apply(f, axis=1)
+
+                # f = """
+                # def custom_func(country, noc):
+                #     return 'Singapore' if noc == 'SGP' else country
+                # """
+
+                # # Define the columns
+                # columns = ['Country', 'NOC']
+
+                # # Apply the function to the DataFrame
+                # self.df_[col_name] = self.df_.apply_rows(
+                #     f,
+                #     incols=['Country', 'NOC'],
+                #     outcols={'New_Column': 'str'},
+                #     kwargs={},
+                # )
         else:
             if type(f) == str:
                 self.df_[col_name] = eval(f)

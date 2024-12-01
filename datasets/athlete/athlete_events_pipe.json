@@ -324,7 +324,7 @@
                     "Country",
                     "NOC"
                 ],
-                "f": "lambda x: 'Singapore' if x['NOC'] == 'SGP' else x['Country']",
+                "f": "lambda x: 0 if x['NOC'] == 'SGP' else 1",
                 "apply": true
             },
             "input_pyspark_pandas": {
@@ -383,6 +383,15 @@
                 ],
                 "f": "lambda x: 'Refugee Olympic Athletes' if x['NOC'] == 'ROT' else x['Country']",
                 "apply": true
+            },
+            "input_rapids": {
+                "col_name": "Country",
+                "columns": [
+                    "Country",
+                    "NOC"
+                ],
+                "f": "lambda x: 1 if x['NOC'] == 'ROT' else 0",
+                "apply": true
             }
         },
         {
@@ -431,6 +440,15 @@
                 ],
                 "f": "lambda x: 'Unknown' if x['NOC'] == 'UNK' else x['Country']",
                 "apply": true
+            },
+            "input_rapids": {
+                "col_name": "Country",
+                "columns": [
+                    "Country",
+                    "NOC"
+                ],
+                "f": "lambda x: 1 if x['NOC'] == 'UNK' else 0",
+                "apply": true
             }
         },
         {
@@ -478,6 +496,15 @@
                     "NOC"
                 ],
                 "f": "lambda x: 'Tuvalu' if x['NOC'] == 'TUV' else x['Country']",
+                "apply": true
+            },
+            "input_rapids": {
+                "col_name": "Country",
+                "columns": [
+                    "Country",
+                    "NOC"
+                ],
+                "f": "lambda x: 1 if x['NOC'] == 'TUV' else 0",
                 "apply": true
             }
         },
@@ -670,7 +697,6 @@
                 "extra_commands": [
                     "import dask.dataframe as pd",
                     "w_gdp = pd.read_csv('datasets/athlete/world_gdp.csv', dtype='object')",
-                    "w_gdp = w_gdp.drop(['Indicator Name', 'Indicator Code'], axis = 1)",
 
                     "w_gdp['Year'] = pd.to_numeric(w_gdp['Year'])",
                     "w_gdp = w_gdp[['Country Name', 'Country Code']].drop_duplicates()"
