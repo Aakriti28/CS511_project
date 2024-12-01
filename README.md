@@ -41,6 +41,7 @@ python run_algorithm.py --algorithm modin_dask --dataset athlete --locally
 python run_algorithm.py --algorithm polars --dataset athlete --locally
 python run_algorithm.py --algorithm pyspark_pandas --dataset athlete --locally
 python run_algorithm.py --algorithm spark --dataset athlete --locally
+python run_algorithm.py --algorithm modin_dask --dataset loan --locally
 ```
 
 ## Run an Algorithm
