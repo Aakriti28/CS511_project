@@ -16,7 +16,7 @@ logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
 
 eda_fields = ['load_dataset', 'to_csv', 'get_columns', 'locate_null_values', 'sort']
-dt_fields = ['join', 'delete_columns', 'rename_columns', 'calc_column', 'rename_columns', 'cast_columns_types', 'delete_columns', 'replace']
+dt_fields = ['join', 'delete_columns', 'rename_columns', 'calc_column', 'cast_columns_types', 'replace']
 dc_fields = ['groupby', 'drop_duplicates', 'fill_nan']
 
 stage_to_name = {
@@ -24,8 +24,13 @@ stage_to_name = {
     'join': 'Data Transformation',
     'groupby': 'Data Cleaning'
 }
+algo_to_name_map = {
+    'pandas': 'Pandas',
+    'modin_dask': 'Modin Dask',
+    'pyspark_pandas': 'PySpark Pandas'
+}
 
-algorithms = ['pandas', 'modin_dask', 'pyspark_pandas']
+algorithms = ['pandas', 'modin_dask', 'pyspark_pandas', 'rapids']
 datasets = ['athlete', 'loan']
 
 if __name__ == '__main__':
@@ -113,35 +118,54 @@ if __name__ == '__main__':
     
     # figure 2: scatterplot of runtime of approaches
     # 2 rows, multiple col: rows are athlete and loan, cols are fields in eda, dt, dc
-    fig, axs = plt.subplots(2, 1, figsize=(20, 10))
-    # make 3 markers
-    markers = ['o', 's', '^']
-    for i, dataset in enumerate(datasets):
-        for algorithm in algorithms:
-            field_times = {}
-            for j, field in enumerate(eda_fields + dt_fields + dc_fields):
-                flag_found = False
-                for (d, t, mem, cpu), data in data_dump.items():
-                    if d == dataset and t == algorithm:
-                        flag_found = True
-                        break
-                if not flag_found:
-                    logger.error(f'No data found for {dataset} dataset with {algorithm} algorithm')
-                    continue
+    
+    # fig, axs = plt.subplots(2, 1, figsize=(20, 10))
+    # markers = ['o', 's', '^']
+    # for i, dataset in enumerate(datasets):
+    #     for algorithm in algorithms:
+    #         field_times = {}
+    #         for j, field in enumerate(eda_fields + dt_fields + dc_fields):
+    #             flag_found = False
+    #             for (d, t, mem, cpu), data in data_dump.items():
+    #                 if d == dataset and t == algorithm:
+    #                     flag_found = True
+    #                     break
+    #             if not flag_found:
+    #                 logger.error(f'No data found for {dataset} dataset with {algorithm} algorithm')
+    #                 continue
 
-                if not data[data['method'] == field].empty:
-                    time = data[data['method'] == field]['time'].mean()
-                    field_times[field] = time
+    #             if not data[data['method'] == field].empty:
+    #                 time = data[data['method'] == field]['time'].mean()
+    #                 field_times[field] = time
+    #             else:
+    #                 logger.error(f'No data found for {field} in {dataset} dataset with {algorithm} algorithm')
             
-            axs[i].scatter(field_times.keys(), field_times.values(), label=algorithm, marker=markers[algorithms.index(algorithm)])
-            axs[i].set_title(f'{dataset.capitalize()}', fontsize=16)
-            axs[i].set_ylabel('Time (s)', fontsize=14)
-            axs[i].set_xlabel('Operations', fontsize=14)
-            axs[i].tick_params(axis='both', which='major', labelsize=14)
-            # xticks incline by 45 deg
-            axs[i].set_xticks(range(len(eda_fields + dt_fields + dc_fields)))
-            axs[i].set_xticklabels(eda_fields + dt_fields + dc_fields, rotation=30)
+    #         # breakpoint()
+    #         axs[i].scatter(field_times.keys(), field_times.values(), label=algorithm, marker=markers[algorithms.index(algorithm)], s=200)
+    #     axs[i].set_title(f'{dataset.capitalize()}', fontsize=16, fontweight='bold', pad=30)
+    #     axs[i].set_ylabel('Time (s)', fontsize=14)
+    #     axs[i].tick_params(axis='both', which='major', labelsize=14)
+    #     # incline xticks by 30 degrees
+    #     xticks = axs[i].get_xticklabels()
+    #     axs[i].set_xticklabels(xticks, rotation=30)
+            
+    #     # make vertical lines at len(eda_fields), len(eda_fields) + len(dt_fields), len(eda_fields) + len(dt_fields) + len(dc_fields)
+    #     # this makes 3 sections eda, dt, dc
+    #     axs[i].axvline(x=len(eda_fields) - 0.5, color='black')
+    #     axs[i].axvline(x=len(eda_fields) + len(dt_fields) - 0.5, color='black')
+            
+    #     # add heading at the top of the three sections, eda, dt, dc
+    #     # use axs[i] bound of the figure to get the x and y coordinates
+    #     axs[i].text((len(eda_fields) - 0.5)/2, axs[i].get_ylim()[1], 'Exploratory Data Analysis', ha='center', va='bottom', fontsize=14)
+    #     axs[i].text(len(eda_fields) + len(dt_fields)/ 2 - 0.5, axs[i].get_ylim()[1], 'Data Transformation', ha='center', va='bottom', fontsize=14)
+    #     axs[i].text(len(eda_fields) + len(dt_fields) + len(dc_fields) / 2 - 0.5, axs[i].get_ylim()[1], 'Data Cleaning', ha='center', va='bottom', fontsize=14)
         
-    plt.tight_layout()
-    plt.legend(fontsize=10)
-    plt.savefig('figure2.png', dpi=300)
+    #     axs[i].grid()
+    #     # get legend fields
+    #     handles, labels = axs[i].get_legend_handles_labels()
+    #     # 
+    #     labels = [algo_to_name_map[label] for label in labels]
+    #     axs[i].legend(handles, labels, fontsize=15, loc='upper left', bbox_to_anchor=(1, 1))
+        
+    # plt.tight_layout()
+    # plt.savefig('figure2.png', dpi=300)
