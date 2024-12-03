@@ -15,12 +15,13 @@ logger.addHandler(stream_handler)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
 
-eda_fields = ['load_dataset', 'to_csv', 'get_columns', 'locate_null_values', 'sort']
+# eda_fields = ['load_dataset', 'to_csv', 'get_columns', 'locate_null_values', 'sort']
+eda_fields = ['get_columns', 'locate_null_values', 'sort']
 dt_fields = ['join', 'delete_columns', 'rename_columns', 'calc_column', 'cast_columns_types', 'replace']
 dc_fields = ['groupby', 'drop_duplicates', 'fill_nan']
 
 stage_to_name = {
-    'load_dataset': 'Exploratory Data Analysis',
+    'get_columns': 'Exploratory Data Analysis',
     'join': 'Data Transformation',
     'groupby': 'Data Cleaning'
 }
