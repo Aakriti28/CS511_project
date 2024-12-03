@@ -9,7 +9,6 @@ random_res/
 pipeline_output/*
 *pkl*
 *gz*
-*loan_data_pipe.json
 results/
 *output.csv
 *zip*
