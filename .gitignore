@@ -1,7 +1,15 @@
 *.log
 src/algorithms/__pycache__
 src/datasets/__pycache__
-results/
+old_res/
+datasets/
 outputs/
+random_res/
 *pyc*
 pipeline_output/*
+*pkl*
+*gz*
+*loan_data_pipe.json
+results/
+*output.csv
+*zip*

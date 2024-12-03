@@ -250,7 +250,7 @@
                     "import pandas as pd",
                     "average_income=pd.read_csv('datasets/loan_data/average_income_by_state.csv')",
                     "from pyspark.sql.types import *",
-                    "schema = StructType([StructField('NOC', StringType(), True), StructField('region', StringType(), True), StructField('notes', StringType(), True)])",
+                    "schema = StructType([StructField('addr_state', StringType(), True), StructField('state_full', StringType(), True), StructField('average_rent', StringType(), True), StructField('average_income', StringType(), True)])",
                     "average_income=sparkSession.createDataFrame(average_income, schema=schema)",
                     "average_income.persist()"
                 ]

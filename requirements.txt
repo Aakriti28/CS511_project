@@ -15,4 +15,3 @@ modin==0.29.0
 memory-profiler==0.61.0
 distributed
 h5py
-vaex

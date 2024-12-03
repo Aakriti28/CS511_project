@@ -82,9 +82,9 @@
     "type": "csv"
   },
   "loan_2": {
-    "path": "datasets/loan_data/loan_data.csv",
+    "path": "datasets/loan_data/loan_data_5.csv",
     "test": "datasets/loan_data/loan_data_test.json",
-    "pipe": "datasets/loan_data/loan_2_pipe.json",
+    "pipe": "datasets/loan_data/loan_data_pipe.json",
     "type": "csv"
   },
   "loan_3": {

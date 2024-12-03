@@ -74,6 +74,7 @@ class SparkBench(AbstractAlgorithm):
         self.c = self.c.set("spark.sql.debug.maxToStringFields", 100)
         self.c = self.c.set("spark.cores.max", str(self.cpu_))
         self.c = self.c.set("spark.driver.maxResultSize", "-1")
+        self.c = self.c.set("spark.driver.memory", "15g")
         self.sparkSession = (
             SparkSession.builder.appName(app_name).config(conf=self.c).getOrCreate()
         )

@@ -1,99 +1,65 @@
-from unicodedata import name
-import warnings
-import os
-
-os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
-os.environ["HADOOP_HOME_WARN_SUPPRESS"] = "1"
-os.environ["HADOOP_ROOT_LOGGER"] = "WARN"
-
-warnings.filterwarnings("ignore")
-import re
-from typing import Union
-from haversine import haversine
-import pyspark.pandas as pd
-
-from src.algorithms.utils import timing
+import contextlib
 from src.datasets.dataset import Dataset
 from src.algorithms.algorithm import AbstractAlgorithm
+from src.algorithms.utils import timing
+from haversine import haversine
+import cudf
+import dask_cudf
+from dask.distributed import Client
+import pandas as pd
+import re
+import unicodedata
+import cupy
+import numpy as np
 
-
-class PandasPysparkBench(AbstractAlgorithm):
-    df_: Union[pd.DataFrame, pd.Series] = None
-    backup_: Union[pd.DataFrame, pd.Series] = None
+class DaskCudfBench(AbstractAlgorithm):
+    df_ = None
+    backup_ = None
     ds_: Dataset = None
-    name = "pyspark_pandas"
+    name = "rapids"
 
-    def __init__(
-        self, name: str, mem: str = None, cpu: int = None, pipeline: bool = False
-    ):
+    def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
-        self.name = name
         self.scalars = {}
         self.dataframes = {}
-        
-        import os
-        import sys
-
-        os.environ['PYSPARK_PYTHON'] = sys.executable
-        os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
-        
-        from pyspark.sql import SparkSession
-        from pyspark import SparkConf, SparkContext
-        spark_conf = SparkConf().setAppName("pandas-on-spark")
-        
-        spark_conf = spark_conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-        spark_conf = spark_conf.set("spark.sql.debug.maxToStringFields", 100)
-
-        spark_conf = spark_conf.set("spark.driver.maxResultSize", "-1")
-        spark_conf = spark_conf.set("spark.driver.memory", "15g")
-        
-
-        spark = SparkContext.getOrCreate(conf = spark_conf)
-        print(spark_conf.getAll())
-
-        self.sparkSession = (
-             SparkSession(spark).builder.getOrCreate()
-        )
-
-        print( self.sparkSession.sparkContext.getConf().getAll())
-        
-        pd.set_option('compute.default_index_type','distributed') # when .head() call is too slow
-        pd.set_option('compute.shortcut_limit',1)
-        pd.set_option('compute.ops_on_diff_frames', True)
-
+        self.client = Client()
 
     def backup(self):
         """
         Creates a backup copy of the current dataframe
         """
-        self.backup_ = self.df_.copy()
+        self.backup = self.df_.copy(deep=True)
 
     def restore(self):
         """
         Replace the internal dataframe with the backup
         """
-        self.df_ = self.backup_.copy()
+        self.df_ = self.backup.copy(deep=True)
+
+    def load_from_pandas(self, df):
+        """
+        Loads data from a pandas dataframe
+        """
+        self.df_ = cudf.from_pandas(df)
+        self.df_ = dask_cudf.from_cudf(self.df_, npartitions=2)
 
     @timing
     def get_pandas_df(self):
         """
         Returns the internal dataframe as a pandas dataframe
         """
-        return self.df_
+        return self.df_.to_pandas()
 
     @timing
-    def load_from_pandas(self, df):
-        """
-        Loads data from a pandas dataframe
-        """
-        self.df_ = df
-
-    @timing
-    def load_dataset(self, ds: Dataset, conn=None, **kwargs):
+    def load_dataset(self, ds: Dataset, **kwargs):
         """
         Load the provided dataframe
+        :param path: path of the file to load
+        :param format: format (json, csv, xml, excel, parquet, sql)
+        :param kwargs: extra arguments
+        :return:
         """
         self.ds_ = ds
         path = ds.dataset_attribute.path
@@ -101,69 +67,80 @@ class PandasPysparkBench(AbstractAlgorithm):
 
         if format == "csv":
             self.df_ = self.read_csv(path, **kwargs)
-        elif format == "excel":
-            self.df_ = self.read_excel(path, **kwargs)
         elif format == "json":
             self.df_ = self.read_json(path, **kwargs)
+        elif format == "xml":
+            self.df_ = self.read_xml(path, **kwargs)
+        elif format == "excel":
+            self.df_ = self.read_excel(path, **kwargs)
         elif format == "parquet":
             self.df_ = self.read_parquet(path, **kwargs)
         elif format == "sql":
-            self.df_ = self.read_sql(path, conn, **kwargs)
-        elif format == "hdf5":
-            self.df_ = self.read_hdf5(path, **kwargs)
-        elif format == "xml":
-            self.df_ = self.read_xml(path, **kwargs)
-
-        return self.df_
-
-    def read_sql(self, query, conn, **kwargs):
-        """
-        Given a connection and a query
-        creates a dataframe from the query output
-        """
-        self.df_ = pd.read_sql(query, conn)
+            self.df_ = self.read_sql(path, **kwargs)
         return self.df_
 
     def read_json(self, path, **kwargs):
         """
+        :param path: path of the file to load
+        :param kwargs: extra arguments
         Read a json file
         """
-        self.df_ = pd.read_json(path, **kwargs)
+        self.df_ = cudf.read_json(path, **kwargs)
         return self.df_
 
     def read_csv(self, path, **kwargs):
         """
         Read a csv file
+        :param path: path of the file to load
+        :param kwargs: extra arguments
         """
-        self.df_ = pd.read_csv(path, **kwargs)
+        self.df_ = dask_cudf.read_csv(path, **kwargs)
         return self.df_
 
     def read_hdf5(self, path, **kwargs):
         """
-        Given a connection and a query
-        creates a dataframe from the query output
+        Read a hdf5 file
+        :param path: path of the file to load
+        :param kwargs: extra arguments
         """
         pass
 
     def read_xml(self, path, **kwargs):
         """
         Read a xml file
+        :param path: path of the file to load
+        :param kwargs: extra arguments
         """
-        self.df_ = pd.read_xml(path, **kwargs)
+        self.df_ = cudf.from_pandas(pd.read_xml(path, **kwargs))
         return self.df_
 
     def read_excel(self, path, **kwargs):
         """
         Read an excel file
+        :param path: path of the file to load
+        :param kwargs: extra arguments
         """
-        self.df_ = pd.read_excel(path, **kwargs)
+        self.df_ = cudf.from_pandas(pd.read_excel(path, **kwargs))
         return self.df_
 
     def read_parquet(self, path, **kwargs):
         """
         Read a parquet file
+        :param path: path of the file to load
+        :param kwargs: extra arguments
         """
-        self.df_ = pd.read_parquet(path, **kwargs)
+        self.df_ = cudf.read_parquet(path, **kwargs)
+        return self.df_
+
+    def read_sql(self, query, conn, **kwargs):
+        """
+        Given a connection and a query
+        creates a dataframe from the query output
+        :param query query to run to get the data
+        :param conn connection to a database
+        :param kwargs: extra arguments
+        """
+        self.df_ = cudf.from_pandas(pd.read_sql(query, conn))
         return self.df_
 
     @timing
@@ -195,7 +172,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         Delete the specified columns
         Columns is a list of column names
         """
-        self.df_ = self.df_.drop(columns=columns)
+        self.df_ = self.df_.drop(columns=columns, axis=1)
         return self.df_
 
     @timing
@@ -229,9 +206,8 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         if func:
             value = eval(value)
+
         if columns is None:
-            columns = []
-        if len(columns) == 0:
             self.df_ = self.df_.fillna(value)
         else:
             for c in columns:
@@ -244,8 +220,11 @@ class PandasPysparkBench(AbstractAlgorithm):
         Performs one-hot encoding of the provided columns
         Columns is a list of column names
         """
-        dummies = pd.get_dummies(self.df_[columns])
-        self.df_ = pd.concat([self.df_, dummies], axis=1)
+
+        dummies = cudf.get_dummies(self.df_[columns], dummy_na=True)
+
+        self.df_ = cudf.concat([self.df_, dummies], axis=1)
+
         return self.df_
 
     @timing
@@ -256,7 +235,12 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         if column == "all":
             column = self.get_columns()
-        return self.df_[self.df_[column].isna()]
+        all_null_mask = self.df_.isna().all(axis=1)
+        result = self.df_[all_null_mask]
+        final_result = result.compute()
+        return final_result
+        # result = null_rows.compute()
+        # return result
 
     @timing
     def search_by_pattern(self, column, pattern):
@@ -266,8 +250,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         on the provided column.
         Pattern could be a regular expression.
         """
-        test = self.df_[column].fillna("").str.contains(re.compile(pattern))
-        return self.df_[test]
+        return self.df_[self.df_[column].str.contains(re.compile(pattern))]
 
     @timing
     def locate_outliers(
@@ -278,17 +261,20 @@ class PandasPysparkBench(AbstractAlgorithm):
         in the provided column lower or higher than the values
         of the lower/upper quantile.
         """
-
         if column == "all":
-            column = self.df_.select_dtypes(include=np.number).columns.tolist()
+            column = self.df_.select_dtypes(include=["float64", "int64"]).columns
 
-        # Calculate the quantile values
-        lower, upper = self.df_[column].quantile([lower_quantile, upper_quantile])
+        q_low = self.df_.quantile(q=[lower_quantile], columns=column, **kwargs)
+        q_hi = self.df_.quantile(q=[upper_quantile], columns=column, **kwargs)
 
-        lower_mask = self.df_[column] < lower
-        upper_mask = self.df_[column] > upper
+        numeric = cudf.DataFrame()
+        for c in column:
+            numeric[c] = self.df_[
+                (self.df_[c].fillna(0).values < q_low[c].values)
+                | (self.df_[c].fillna(0).values > q_hi[c].values)
+            ][c]
 
-        return self.df_[lower_mask | upper_mask]
+        return numeric
 
     @timing
     def get_columns_types(self):
@@ -307,7 +293,17 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         for column, dtype in dtypes.items():
             if column in self.df_.columns:
-                self.df_[column] = self.df_[column].astype(dtype)
+                if dtype == "timedelta64[ns]":
+                    self.df_[column] = self.df_[column].astype(str)
+                    self.df_[column] = "1970-01-01 " + self.df_[column]
+                    self.df_[column] = cudf.to_datetime(self.df_[column])
+
+                elif dtype == "datetime64[ns]":
+                    print(self.df_[column])
+                    self.df_[column] = cudf.to_datetime(self.df_[column])
+                    print(self.df_[column])
+                else:
+                    self.df_[column] = self.df_[column].astype(dtype)
 
         return self.df_
 
@@ -320,7 +316,6 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         return self.df_.describe()
 
-    @timing
     def find_mismatched_dtypes(self):
         """
         Returns, if exists, a list of columns with mismatched data types.
@@ -331,11 +326,11 @@ class PandasPysparkBench(AbstractAlgorithm):
          - suggested_dtype: suggested data type
         """
         current_dtypes = self.get_columns_types()
-        new_dtypes = (
-            self.df_.apply(pd.to_numeric, errors="ignore")
-            .dtypes.apply(lambda x: x.name)
-            .to_dict()
-        )
+        new_df = self.df_.copy()
+        for c in new_df.columns.values:
+            with contextlib.suppress(Exception):
+                new_df[c] = cudf.to_numeric(new_df[c])
+        new_dtypes = new_df.dtypes.apply(lambda x: x.name).to_dict()
 
         return [
             {
@@ -347,7 +342,6 @@ class PandasPysparkBench(AbstractAlgorithm):
             if new_dtypes[k] != current_dtypes[k]
         ]
 
-    @timing
     def check_allowed_char(self, column, pattern):
         """
         Return true if all the values of the provided column
@@ -365,7 +359,6 @@ class PandasPysparkBench(AbstractAlgorithm):
         self.df_ = self.df_.drop_duplicates()
         return self.df_
 
-    @timing
     def drop_by_pattern(self, column, pattern):
         """
         Delete the rows where the provided pattern
@@ -383,9 +376,14 @@ class PandasPysparkBench(AbstractAlgorithm):
         column datatype must be datetime
         An example of format is '%m/%d/%Y'
         """
-        if str(self.df_[column].dtype) not in ["datetime64[ns]"]:
-            self.df_[column] = pd.to_datetime(
-                self.df_[column], errors="coerce", format=format
+
+        try:
+            self.df_[column] = cudf.to_datetime(
+                self.df_[column].astype(str), format=format
+            )
+        except:
+            self.df_[column] = cudf.from_pandas(
+                pd.to_datetime(self.df_[column].to_pandas(), format=format)
             )
         self.df_[column] = self.df_[column].dt.strftime(format)
         return self.df_
@@ -439,7 +437,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         for column in columns:
-            self.df_[f"{column}_duplicate"] = self.df_[column]
+            self.df_[column + "_duplicate"] = self.df_[column]
         return self.df_
 
     @timing
@@ -449,44 +447,41 @@ class PandasPysparkBench(AbstractAlgorithm):
         and the dictionary to aggregate ("sum", "mean", "count") the values for each column: {"col1": "sum"}
         (see pivot_table in pandas documentation)
         """
-        if (str(type(columns)) == "list") and (len(columns) > 1):
-            print("Only one column can be used as columns")
-            columns = [columns[0]]
         if other_df:
-            self.dataframes[other_df] = (
-                self.dataframes[other_df]
-                .pivot_table(
-                    index=[index], values=values, columns=columns, aggfunc=aggfunc
-                )
-                .reset_index()
-            )
+            print(self.dataframes[other_df].head())
+            self.dataframes[other_df] = cudf.pivot_table(
+                self.dataframes[other_df],
+                index=index,
+                values=values,
+                columns=columns,
+                aggfunc=aggfunc,
+            ).reset_index()
             return self.dataframes[other_df]
-
-        return self.df_.pivot_table(
-            index=index, values=values, columns=columns[0], aggfunc=aggfunc
+        return cudf.pivot_table(
+            self.df_, index=index, values=values, columns=columns, aggfunc=aggfunc
         ).reset_index()
 
     @timing
-    def unpivot(
-        self, id_vars=None, columns=None, var_name=None, val_name=None, other_df=None
-    ):
+    def unpivot(self, columns, var_name=None, val_name=None, other_df=None):
         """
         Define the list of columns to be used as values for the variable column,
         the name for variable columns and the one for value column_name
         """
         if other_df:
-            self.dataframes[other_df] = (
-                self.dataframes[other_df].fillna("Unknown").astype(str)
-            )
-            # ensure that the columns are not null and string
-            self.dataframes[other_df] = pd.melt(
-                self.dataframes[other_df], id_vars=id_vars
+            self.dataframes[other_df] = cudf.melt(
+                self.dataframes[other_df],
+                id_vars=list(
+                    set(list(self.dataframes[other_df].columns.values)) - set(columns)
+                ),
+                value_vars=columns,
+                var_name=var_name,
+                value_name=val_name,
             )
             return self.dataframes[other_df]
 
-        self.df_ = pd.melt(
+        self.df_ = cudf.melt(
             self.df_,
-            id_vars=id_vars,
+            id_vars=list(set(list(self.df_.columns.values)) - set(columns)),
             value_vars=columns,
             var_name=var_name,
             value_name=val_name,
@@ -500,7 +495,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         if columns == "all":
-            columns = self.get_columns()
+            columns = list(self.df_.columns.values)
         self.df_.dropna(subset=columns, inplace=True)
         return self.df_
 
@@ -530,13 +525,19 @@ class PandasPysparkBench(AbstractAlgorithm):
         Remove diacritics from the provided columns
         Columns is a list of column names
         """
+
+        """
+        def enc_str(s):
+            s = str(s)
+            s = unicodedata.normalize('NFKD', s)
+            s = s.encode('ascii', errors='ignore').decode('utf-8')
+            return s
+        
         for column in columns:
-            self.df_[column] = (
-                self.df_[column]
-                .str.normalize("NFKD")
-                .str.encode("ascii", errors="ignore")
-                .str.decode("utf-8")
-            )
+            self.df_[column] = self.df_[column].apply(enc_str)
+        """
+
+        print("Not implemented")
         return self.df_
 
     @timing
@@ -562,38 +563,22 @@ class PandasPysparkBench(AbstractAlgorithm):
         Calculate the new column col_name by applying
         the function f to the whole dataframe
         """
+        
+
         if not columns:
-            columns = self.get_columns()
+            columns = self.df_.columns
+        # print(col_name, f, columns, apply)
+
         if apply:
             if type(f) == str:
                 f = eval(f)
-                self.df_[col_name] = self.df_[columns].apply(f, axis=1)  # , args=(,))
+                # print(type(f), type(self.df_), f)
+                self.df_[col_name] = self.df_[columns].apply(f, axis=1)
         else:
             if type(f) == str:
                 self.df_[col_name] = eval(f)
+        # print(self.df_.columns)
         return self.df_
-
-    @timing
-    def calc_scalar(self, name, f, columns=[], filter=None, use_scalars=False):
-        """
-        Apply the provided function to the dataframe
-        """
-        scalar = self.df_.copy()
-        if use_scalars:
-            scalar = eval(f)
-            return scalar
-
-        if filter:
-            scalar = scalar[eval(filter)]
-        if columns:
-            scalar = scalar[columns]
-
-        if type(f) == str:
-            f = eval(f)
-
-        scalar = scalar.apply(f)
-        self.scalars[name] = scalar.values[0]
-        return scalar
 
     @timing
     def join(self, other, left_on=None, right_on=None, how="inner", **kwargs):
@@ -612,110 +597,51 @@ class PandasPysparkBench(AbstractAlgorithm):
 
     @timing
     def groupby(
-        self, columns, f, cast=None, new_df=None, inplace=False, no_multidx=False
+        self, columns, f, cast=None, inplace=False, new_df=None, no_multidx=False
     ):
         """
         Aggregate the dataframe by the provided columns
         then applies the specified function f on every group.
         The function f can be a string representing a pandas DataFrameGroupBy method with arguments.
         """
-        # Define the allowed aggregation methods and their corresponding functions
-        if isinstance(f, str):
-            allowed_methods = {
-                "cummin": lambda x: x.cummin(),
-                "cummax": lambda x: x.cummax(),
-                "idxmin": lambda x: x.idxmin(),
-                "idxmax": lambda x: x.idxmax(),
-                "var": lambda x: x.var(),
-                "std": lambda x: x.std(),
-                "sem": lambda x: x.sem(),
-                "quantile": lambda x: x.quantile(),
-                "mean": lambda x, **kwargs: x.mean(**kwargs),
-                "count": lambda x, **kwargs: x.count(),
-            }
-
-            # Parse the function name and arguments
-            parts = f.split("(")
-            method_name = parts[0].strip()
-            args_str = "(" + parts[1] if len(parts) > 1 else None
-
-            # Check if the specified method is allowed
-            if method_name not in allowed_methods:
-                raise ValueError(f"Unsupported method '{method_name}'")
-
-            # Get the corresponding function
-            method_func = allowed_methods[method_name]
-
-            # Perform the groupby operation
-            grouped = self.df_.groupby(columns)
-
-            # Apply the specified function with arguments if provided
-            if args_str:
-                # Evaluate the arguments to create a dictionary of keyword arguments
-                kwargs = eval("dict" + args_str)
-                result = grouped.apply(lambda x: method_func(x, **kwargs))
-            else:
-                # No arguments provided, apply the function directly
-                result = grouped.apply(method_func)
-
-        elif isinstance(f, dict):
-            if cast:
-                for column, t in cast.items():
-                    if str(self.df_[column].dtype) == "object":
-                        self.df_[column] = self.df_[column].fillna("Unknown")
-                    elif str(self.df_[column].dtype) in [
-                        "float64",
-                        "int64",
-                        "int32",
-                        "float32",
-                    ]:
-                        self.df_[column] = self.df_[column].fillna(0)
-                    elif str(self.df_[column].dtype) == "bool":
-                        self.df_[column] = self.df_[column].fillna(False)
-                    self.df_[column] = self.df_[column].astype(t)
-
-            # Extract the first key from the dictionary for aggregation
-            agg_column = list(f.keys())[0]
-
-            # Check if the aggregation column is also in the groupby columns
-            if agg_column in columns:
-                if f[agg_column] == "count":
-                    # Remove the column to be aggregated from the columns list
-                    columns_without_agg_column = [
-                        col for col in columns if col != agg_column
-                    ]
-                    grouped_df = (
-                        self.df_.groupby(columns).size().reset_index(name="count")
-                    )
-                    result = grouped_df.pivot_table(
-                        index=columns_without_agg_column,
-                        values="count",
-                        aggfunc="sum",
-                        columns=agg_column,
-                    )
-                else:
-                    # Handle other aggregation functions if necessary
-                    result = self.df_.groupby(columns).agg(f)
-            else:
-                result = self.df_.groupby(columns).agg(f)
-
-        else:
-            raise ValueError(
-                "The aggregation function should be a string or a dictionary."
-            )
-
-        # Handle new_df, inplace, and no_multidx options
+        result = self.df_.groupby(columns).agg(f)
         if new_df:
-            self.dataframes[new_df] = result.reset_index()
-            # print(self.dataframes[new_df].head())
-
+            if no_multidx:
+                self.dataframes[new_df] = result.reset_index()
+            else:
+                self.dataframes[new_df] = result.unstack().reset_index()
             return self.dataframes[new_df]
 
         if inplace:
-            self.df_ = result.reset_index()
+            self.df_ = result.unstack().reset_index()
+            self.df_.columns = [
+                "_".join(col_name).rstrip("_") for col_name in self.df_.columns
+            ]
             return self.df_
 
         return result
+
+    @timing
+    def calc_scalar(self, name, f, columns=[], filter=None, use_scalars=False):
+        """
+        Apply the provided function to the dataframe
+        """
+        scalar = self.df_.copy()
+
+        if use_scalars:
+            scalar = eval(f)
+            return scalar
+
+        if filter:
+            scalar = scalar[eval(filter)]
+        if columns:
+            scalar = scalar[columns]
+        if type(f) == str:
+            f = eval(f)
+
+        scalar = f(scalar)
+        self.scalars[name] = scalar.values[0]
+        return scalar
 
     @timing
     def categorical_encoding(self, columns):
@@ -724,8 +650,8 @@ class PandasPysparkBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         for column in columns:
-            self.df_[column] = self.df_[column].astype("category").cat.codes
-            # self.df_[column] = self.df_[column].cat.codes
+            self.df_[column] = self.df_[column].astype("category")
+            self.df_[column] = self.df_[column].cat.codes
         return self.df_
 
     @timing
@@ -766,10 +692,13 @@ class PandasPysparkBench(AbstractAlgorithm):
         Edit the values of the cells in the provided columns using the provided expression
         Columns is a list of column names
         """
-        if type(func) == str:
-            func = eval(func)
+        # print("WARNING: don't work with string type columns")
+        func = eval(func)
         for c in columns:
-            self.df_[c] = self.df_[c].apply(func)
+            if str(self.df_[c].dtype) in {"object", "string"}:
+                print("WARNING: don't work with string type columns")
+                continue
+            self.df_[c] = func(self.df_[c])
         return self.df_
 
     @timing
@@ -816,50 +745,55 @@ class PandasPysparkBench(AbstractAlgorithm):
         ]
 
     @timing
-    def to_csv(self, path="./outputs/pd_pyspark_output.csv", **kwargs):
+    def to_csv(self, path=f"./pipeline_output/{name}_output.csv", **kwargs):
         """
         Export the dataframe in a csv file.
         """
-        self.df_ = self.df_.astype(str)
-        self.df_.fillna("null").to_csv(path, **kwargs)
+        try:
+            self.df_.to_csv(path, **kwargs, chunksize=1000000)
+        except Exception as e:
+            self.df_.to_pandas().to_csv(path, **kwargs)
 
     @timing
-    def query(self, query, values=None, inplace=False):
+    def to_parquet(self, path="./pipeline_output/rapids_output.parquet", **kwargs):
+        """
+        Export the dataframe in a parquet file.
+        """
+        self.df_.to_parquet(path, **kwargs)
+
+    @timing
+    def query(self, query, inplace=False):
         """
         Queries the dataframe and returns the corresponding
         result set.
         :param query: a string with the query conditions, e.g. "col1 > 1 & col2 < 10"
         :return: subset of the dataframe that correspond to the selection conditions
         """
-        if values:
-
-            def query_func(pdf):
-                val1 = self.df_.Year.max()
-                return pdf.query(query)
-
-            return self.df_.pandas_on_spark.apply_batch(query_func)
-        if type(query) == list:
-            for q in query:
-                self.df_.query(q, inplace=inplace)
-            return self.df_
-
-        return self.df_.query(query, inplace=inplace)
+        try:
+            query = self.df_.query(query)
+            if inplace:
+                self.df_ = query
+                return self.df_
+        except Exception:
+            print(
+                "query only supports numeric, datetime, timedelta, or bool dtypes. Not string."
+            )
+            pandas_df = self.df_.to_pandas()
+            pandas_df = pandas_df.query(query)
+            if inplace:
+                self.df_ = cudf.from_pandas(pandas_df)
+                return self.df_
 
     def force_execution(self):
-        self.df_.count()
+        pass
+
+    def restore(self):
+        pass
 
     @timing
     def done(self):
-        pass
-
-    def set_construtor_args(self, args):
-        pass
+        del self.df_
 
     @timing
-    def to_parquet(
-        self, path="./pipeline_output/pyspark_pandas_output.parquet", **kwargs
-    ):
-        """
-        Export the dataframe in a csv file.
-        """
-        self.df_.to_parquet(path, **kwargs)
+    def set_construtor_args(self, args):
+        pass

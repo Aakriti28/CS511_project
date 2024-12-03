@@ -63,6 +63,10 @@ class AlgorithmsFactory(BaseModel):
             elif algorithm_name == "vaex":
                 from src.algorithms.modules.vaex_bench import VaexBench
                 return VaexBench(mem, cpu, pipeline)
+            
+            elif algorithm_name == "dask_cudf":
+                from src.algorithms.modules.dask_cudf_bench import DaskCudfBench
+                return DaskCudfBench(mem, cpu, pipeline)
 
             raise AssertionError("Algorithm type is not valid.")
         except AssertionError as e:

@@ -93,9 +93,11 @@ class PolarsBench(AbstractAlgorithm):
         :param kwargs: extra arguments
         """
         try:
-            self.df_ = pl.read_csv(path, **kwargs)
+            # print(kwargs)
+            self.df_ = pl.read_csv(path)
         except:
-            self.df_ = pl.from_pandas(pd.read_csv(path, **kwargs))
+            self.df_ = pl.from_pandas(pd.read_csv(path, **kwargs).drop(columns=['id']))
+
         return self.df_
 
     def read_xml(self, path, **kwargs):
