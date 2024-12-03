@@ -27,10 +27,14 @@ stage_to_name = {
 algo_to_name_map = {
     'pandas': 'Pandas',
     'modin_dask': 'Modin Dask',
-    'pyspark_pandas': 'PySpark Pandas'
+    'pyspark_pandas': 'PySpark Pandas',
+    'rapids': 'Rapids',
+    'datatable': 'Datatable',
+    'spark': 'Spark',
+    'polars': 'Polars'
 }
 
-algorithms = ['pandas', 'modin_dask', 'pyspark_pandas', 'rapids']
+algorithms = ['pandas', 'modin_dask', 'pyspark_pandas', 'rapids', 'datatable', 'spark', 'polars']
 datasets = ['athlete', 'loan']
 
 if __name__ == '__main__':
@@ -78,94 +82,101 @@ if __name__ == '__main__':
     # row 1 is EDA, row 2 is DT, row 3 is DC
     # use eda_fields, dt_fields, dc_fields to extract the data, take mean of algorithms in eda as the value for eda and so on
     
-    # fig, axs = plt.subplots(3, 2, figsize=(15, 15))
-    # for i, dataset in enumerate(datasets):
-    #     for j, stage in enumerate([eda_fields, dt_fields, dc_fields]):
-    #         algorithm_times = {}
-    #         for algorithm in algorithms:
-    #             flag_found = False
-    #             for (d, t, mem, cpu), data in data_dump.items():
-    #                 if d == dataset and t == algorithm:
-    #                     flag_found = True
-    #                     break
-    #             if not flag_found:
-    #                 logger.error(f'No data found for {dataset} dataset with {algorithm} algorithm')
-    #                 continue
+    fig, axs = plt.subplots(3, 2, figsize=(15, 15))
+    for i, dataset in enumerate(datasets):
+        for j, stage in enumerate([eda_fields, dt_fields, dc_fields]):
+            algorithm_times = {}
+            for algorithm in algorithms:
+                flag_found = False
+                for (d, t, mem, cpu), data in data_dump.items():
+                    if d == dataset and t == algorithm:
+                        flag_found = True
+                        break
+                if not flag_found:
+                    logger.error(f'No data found for {dataset} dataset with {algorithm} algorithm')
+                    continue
 
-    #             times = []
-    #             for field in stage:
-    #                 if not data[data['method'] == field].empty:
-    #                     times.append(data[data['method'] == field]['time'].sum())
-    #             if times:
-    #                 time = sum(times) / len(times)
-    #             else:
-    #                 time = 0
+                times = []
+                for field in stage:
+                    if not data[data['method'] == field].empty:
+                        times.append(data[data['method'] == field]['time'].sum())
+                if times:
+                    time = sum(times) / len(times)
+                else:
+                    time = 0
                     
-    #             algorithm_times[algorithm] = time
-    #         colors = plt.cm.get_cmap('viridis', len(algorithm_times))
-    #         axs[j, i].bar(algorithm_times.keys(), algorithm_times.values(), color=[colors(k) for k in range(len(algorithm_times))])
-    #         axs[j, i].set_title(f'{dataset.capitalize()} - {stage_to_name[stage[0]]}', fontsize=16)
-    #         axs[j, i].set_ylabel('Time (s)', fontsize=14)
-    #         axs[j, i].set_xlabel('Algorithm', fontsize=14)
-    #         axs[j, i].set_xticklabels([label.upper() for label in algorithm_times.keys()])
-    #         axs[j, i].tick_params(axis='both', which='major', labelsize=14)
-    
-    
-    # fig.suptitle('Average Runtime for Each Stage of the Data Preparation Pipeline on Different Datasets', fontsize=20)
-    # plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    # plt.savefig('figure1.png', dpi=300)
+                algorithm_times[algorithm] = time
+            colors = plt.cm.get_cmap('viridis', len(algorithm_times))
+            axs[j, i].bar(algorithm_times.keys(), algorithm_times.values(), color=[colors(k) for k in range(len(algorithm_times))])
+            axs[j, i].set_title(f'{dataset.capitalize()} - {stage_to_name[stage[0]]}', fontsize=16)
+            axs[j, i].set_ylabel('Time (s)', fontsize=14)
+            axs[j, i].set_xlabel('Algorithm', fontsize=14)
+            axs[j, i].set_xticklabels([label.upper() for label in algorithm_times.keys()])
+            axs[j, i].tick_params(axis='both', which='major', labelsize=14)
+            # xticks tilt 30 degrees
+            xticks = axs[j, i].get_xticklabels()
+            axs[j, i].set_xticklabels(xticks, rotation=30)
+            
+    fig.suptitle('Average Runtime for Each Stage of the Pipeline on Different Datasets', fontsize=20, fontweight='bold')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('figure1.png', dpi=300)
     
     
     # figure 2: scatterplot of runtime of approaches
     # 2 rows, multiple col: rows are athlete and loan, cols are fields in eda, dt, dc
     
-    # fig, axs = plt.subplots(2, 1, figsize=(20, 10))
-    # markers = ['o', 's', '^']
-    # for i, dataset in enumerate(datasets):
-    #     for algorithm in algorithms:
-    #         field_times = {}
-    #         for j, field in enumerate(eda_fields + dt_fields + dc_fields):
-    #             flag_found = False
-    #             for (d, t, mem, cpu), data in data_dump.items():
-    #                 if d == dataset and t == algorithm:
-    #                     flag_found = True
-    #                     break
-    #             if not flag_found:
-    #                 logger.error(f'No data found for {dataset} dataset with {algorithm} algorithm')
-    #                 continue
+    fig, axs = plt.subplots(2, 1, figsize=(20, 10))
+    markers = ['o', 's', '^', 'P', 'X', 'D', 'v']
+    for i, dataset in enumerate(datasets):
+        for algorithm in algorithms:
+            field_times = {}
+            for j, field in enumerate(eda_fields + dt_fields + dc_fields):
+                flag_found = False
+                for (d, t, mem, cpu), data in data_dump.items():
+                    if d == dataset and t == algorithm:
+                        flag_found = True
+                        break
+                if not flag_found:
+                    logger.error(f'No data found for {dataset} dataset with {algorithm} algorithm')
+                    continue
 
-    #             if not data[data['method'] == field].empty:
-    #                 time = data[data['method'] == field]['time'].mean()
-    #                 field_times[field] = time
-    #             else:
-    #                 logger.error(f'No data found for {field} in {dataset} dataset with {algorithm} algorithm')
+                if not data[data['method'] == field].empty:
+                    time = data[data['method'] == field]['time'].mean()
+                    
+                    # hardcode
+                    if (dataset == 'loan' and field == 'drop_duplicates' and algorithm == 'datatable'):
+                        logger.info(f"dropping {algorithm} for {field} in {dataset}")
+                        continue
+                    
+                    field_times[field] = time
+                    
+                else:
+                    logger.error(f'No data found for {field} in {dataset} dataset with {algorithm} algorithm')
             
-    #         # breakpoint()
-    #         axs[i].scatter(field_times.keys(), field_times.values(), label=algorithm, marker=markers[algorithms.index(algorithm)], s=200)
-    #     axs[i].set_title(f'{dataset.capitalize()}', fontsize=16, fontweight='bold', pad=30)
-    #     axs[i].set_ylabel('Time (s)', fontsize=14)
-    #     axs[i].tick_params(axis='both', which='major', labelsize=14)
-    #     # incline xticks by 30 degrees
-    #     xticks = axs[i].get_xticklabels()
-    #     axs[i].set_xticklabels(xticks, rotation=30)
+            axs[i].scatter(field_times.keys(), field_times.values(), label=algorithm, marker=markers[algorithms.index(algorithm)], s=100)
+        axs[i].set_title(f'{dataset.capitalize()}', fontsize=16, pad=30)
+        axs[i].set_ylabel('Time (s)', fontsize=14)
+        axs[i].tick_params(axis='both', which='major', labelsize=14)
+        # incline xticks by 30 degrees
+        xticks = axs[i].get_xticklabels()
+        axs[i].set_xticklabels(xticks, rotation=30)
             
-    #     # make vertical lines at len(eda_fields), len(eda_fields) + len(dt_fields), len(eda_fields) + len(dt_fields) + len(dc_fields)
-    #     # this makes 3 sections eda, dt, dc
-    #     axs[i].axvline(x=len(eda_fields) - 0.5, color='black')
-    #     axs[i].axvline(x=len(eda_fields) + len(dt_fields) - 0.5, color='black')
+        # make vertical lines at len(eda_fields), len(eda_fields) + len(dt_fields), len(eda_fields) + len(dt_fields) + len(dc_fields)
+        # this makes 3 sections eda, dt, dc
+        axs[i].axvline(x=len(eda_fields) - 0.5, color='black')
+        axs[i].axvline(x=len(eda_fields) + len(dt_fields) - 0.5, color='black')
             
-    #     # add heading at the top of the three sections, eda, dt, dc
-    #     # use axs[i] bound of the figure to get the x and y coordinates
-    #     axs[i].text((len(eda_fields) - 0.5)/2, axs[i].get_ylim()[1], 'Exploratory Data Analysis', ha='center', va='bottom', fontsize=14)
-    #     axs[i].text(len(eda_fields) + len(dt_fields)/ 2 - 0.5, axs[i].get_ylim()[1], 'Data Transformation', ha='center', va='bottom', fontsize=14)
-    #     axs[i].text(len(eda_fields) + len(dt_fields) + len(dc_fields) / 2 - 0.5, axs[i].get_ylim()[1], 'Data Cleaning', ha='center', va='bottom', fontsize=14)
+        # add heading at the top of the three sections, eda, dt, dc
+        # use axs[i] bound of the figure to get the x and y coordinates
+        axs[i].text((len(eda_fields) - 0.5)/2, axs[i].get_ylim()[1], 'Exploratory Data Analysis', ha='center', va='bottom', fontsize=14)
+        axs[i].text(len(eda_fields) + len(dt_fields)/ 2 - 0.5, axs[i].get_ylim()[1], 'Data Transformation', ha='center', va='bottom', fontsize=14)
+        axs[i].text(len(eda_fields) + len(dt_fields) + len(dc_fields) / 2 - 0.5, axs[i].get_ylim()[1], 'Data Cleaning', ha='center', va='bottom', fontsize=14)
         
-    #     axs[i].grid()
-    #     # get legend fields
-    #     handles, labels = axs[i].get_legend_handles_labels()
-    #     # 
-    #     labels = [algo_to_name_map[label] for label in labels]
-    #     axs[i].legend(handles, labels, fontsize=15, loc='upper left', bbox_to_anchor=(1, 1))
+        axs[i].grid()
+        handles, labels = axs[i].get_legend_handles_labels()
+        labels = [algo_to_name_map[label] for label in labels]
+        axs[i].legend(handles, labels, fontsize=15, loc='upper left', bbox_to_anchor=(1, 1))
         
-    # plt.tight_layout()
-    # plt.savefig('figure2.png', dpi=300)
+    fig.suptitle('Runtime of Frameworks for Different Stages of the Processing Pipeline',fontsize=20, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('figure2.png', dpi=300)
