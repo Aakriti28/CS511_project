@@ -121,7 +121,6 @@ if __name__ == '__main__':
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('figure1.png', dpi=300)
     
-    
     # figure 2: scatterplot of runtime of approaches
     # 2 rows, multiple col: rows are athlete and loan, cols are fields in eda, dt, dc
     
@@ -187,8 +186,6 @@ if __name__ == '__main__':
     # entries are algorithms
     
     fig, axs = plt.subplots(2, 2, figsize=(15, 15))
-
-    
     for i, dataset in enumerate(datasets):
         for j, method in enumerate(['load_dataset', 'to_csv']):
             algorithm_times = {}
@@ -210,7 +207,7 @@ if __name__ == '__main__':
 
             colors = plt.cm.get_cmap('viridis', len(algorithm_times))
             axs[j, i].bar(algorithm_times.keys(), algorithm_times.values(), color=[colors(k) for k in range(len(algorithm_times))])
-            axs[j, i].set_title(f'{dataset.capitalize()} - {"Read" if method == "load_dataset" else "Write"}', fontsize=16)
+            axs[j, i].set_title(f'{dataset.capitalize()} - {"Read" if method == "load_dataset" else "Write"}', fontsize=18)
             axs[j, i].set_ylabel('Time (s)', fontsize=14)
             axs[j, i].set_xlabel('Algorithm', fontsize=14)
             axs[j, i].set_xticklabels([algo_to_name_map[label] for label in algorithm_times.keys()], rotation=30)

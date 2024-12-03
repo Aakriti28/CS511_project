@@ -37,17 +37,18 @@ if __name__ == '__main__':
     
     # plot only the required methods in a 2x2 figure
     fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-    fig.suptitle('Time Taken For Select DF Operations On Multiple CPUs On The Loan Dataset', fontsize=16, fontweight='bold')
+    fig.suptitle('Time Taken For Select DF Operations On Multiple CPUs On The Loan Dataset', fontsize=20, fontweight='bold')
     for i, operation in enumerate(required_methods):
         ax = axs[i // 2, i % 2]
-        ax.set_title(operation_to_name.get(operation, operation))
-        ax.set_xlabel('Number of CPUs')
-        ax.set_ylabel('Time (s)')
+        ax.set_title(operation_to_name.get(operation, operation), fontsize=15, fontweight='bold')
+        ax.set_xlabel('Number of CPUs', fontsize=12)
+        ax.set_ylabel('Time (s)', fontsize=14)
         ax.grid(True)
         times = [cpu_to_df[num_cpu][cpu_to_df[num_cpu]['method'] == operation]['time'].values[0] for num_cpu in num_cpus]
         ax.bar(range(len(num_cpus)), times)
         ax.set_xticks(range(len(num_cpus)))
-        ax.set_xticklabels(num_cpus)
+        ax.set_xticklabels(num_cpus, fontsize=14)
+        ax.tick_params(axis='y', labelsize=14)
         
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('./plots/cpu_plots_selected_methods.png', dpi=300)
